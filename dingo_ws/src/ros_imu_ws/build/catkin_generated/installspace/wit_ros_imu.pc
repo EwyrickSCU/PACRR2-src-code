@@ -1,0 +1,8 @@
+prefix=/home/pacrr/Documents/GitHub/PACRR/dingo_ws/src/ros_imu_ws/install
+
+Name: wit_ros_imu
+Description: Description of wit_ros_imu
+Version: 1.0.1
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

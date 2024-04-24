@@ -1,0 +1,10 @@
+*.DS_Store
+*.pyc
+**/__pycache__
+dingo_ws/build/*
+dingo_ws/devel/*
+dingo_ws/logs/*
+dingo_ws/.catkin_tools/*
+dingo_ws/.vscode/*
+.vscode/*
+dingo_ws/src/.vscode/*
