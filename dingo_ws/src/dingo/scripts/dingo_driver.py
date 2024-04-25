@@ -26,7 +26,8 @@ from dingo_control.State import State, BehaviorState
 from dingo_control.Kinematics import four_legs_inverse_kinematics
 from dingo_control.Config import Configuration
 from dingo_control.msg import TaskSpace, JointSpace, Angle
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Int32
+from sensor_msgs.msg import LaserScan
 
 if is_physical:
     from dingo_servo_interfacing.HardwareInterface import HardwareInterface
@@ -91,7 +92,11 @@ class DingoDriver:
         rospy.loginfo("z clearance: %.2f", self.config.z_clearance)
         rospy.loginfo("back leg x shift: %.2f", self.config.rear_leg_x_shift)
         rospy.loginfo("front leg x shift: %.2f", self.config.front_leg_x_shift)
-
+    
+    def publish_state(self):
+        state_msg = Int32()
+        state_msg.data = self.state.behavior_state.value
+        self.state_publisher.publish(state_msg)
         
     
     def run(self):
@@ -160,6 +165,7 @@ class DingoDriver:
                 else:
                     if self.is_sim:
                         self.publish_joints_to_sim(self.state.joint_angles)
+                self.publish_state()
                 self.rate.sleep()
 
             if self.state.currently_estopped == 0:

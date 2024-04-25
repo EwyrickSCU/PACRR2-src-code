@@ -92,9 +92,12 @@ else:
                 #  2  [front_right_lower, front_left_lower, back_right_lower, back_left_lower]] """
 
 offsets = np.array(
-                    [[70, 107, 115, 64],
-                    [35, 10, 15, 22],
-                    [16, 27, 35, 14]])
+                    # [[70, 107, 115, 64],
+                    # [35, 10, 15, 22],
+                    # [16, 27, 35, 14]])
+                    [[63, 107, 116, 79],
+                    [2, 0, 5, 24],
+                    [0, 0, 10, 0]])
 
 
 servo_name = ""

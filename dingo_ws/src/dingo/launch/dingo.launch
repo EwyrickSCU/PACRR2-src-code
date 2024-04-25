@@ -5,13 +5,14 @@
     <arg name="use_keyboard" default="0"/>
     <arg name="serial_port" default="/dev/ttyS0"/>
     <arg name="use_imu" default="0"/>
+    <arg name="use_auto" default="0"/>
 
     <group if="$(arg is_physical)">
         <!-- Communication Node between Arduino and Pi -->
-        <node pkg="rosserial_python" type="serial_node.py" name="dingo_rosserial" args="$(arg serial_port)" output="screen"/>
+        <!-- <node pkg="rosserial_python" type="serial_node.py" name="dingo_rosserial" args="$(arg serial_port)" output="screen"/> -->
 
         <!-- LCD Screen -->
-        <node pkg = "dingo_peripheral_interfacing" type = "dingo_lcd_interfacing.py" name = "dingo_LCD_node" output="screen"></node>
+        <!-- <node pkg = "dingo_peripheral_interfacing" type = "dingo_lcd_interfacing.py" name = "dingo_LCD_node" output="screen"></node> -->
     </group>
 
     <!-- If want to use the joystick, launch joystick node -->
@@ -27,9 +28,12 @@
     <group if="$(arg use_keyboard)">
         <node pkg = "dingo_input_interfacing" type = "Keyboard.py" name = "keyboard_input_listener" output="screen"></node>
     </group>
+
+    <group if="$(arg use_auto)">
+        <node pkg = "dingo_input_interfacing" type = "AutoMove.py" name = "auto_input_listener" output="screen"></node>
+    </group>
     
     <!-- Dingo Driver -->
     <node pkg="dingo" type="dingo_driver.py"
         name="dingo" args="$(arg is_sim) $(arg is_physical) $(arg use_imu)" output="screen"/>
 </launch>
-    

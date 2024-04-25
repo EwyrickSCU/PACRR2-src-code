@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from adafruit_servokit import ServoKit
 # from leg_config import *
 import numpy as np
