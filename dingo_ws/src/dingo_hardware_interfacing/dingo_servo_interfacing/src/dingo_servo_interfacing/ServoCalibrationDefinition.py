@@ -8,8 +8,9 @@ class motor_config():
     def __init__(self):
         self.pwm_max = 2400
         self.pwm_min = 370
-        self.kit = ServoKit(channels=16) #Defininng a new set of servos uising the Adafruit ServoKit LIbrary
-        
+        self.kitF = ServoKit(channels=16) #Defininng a new set of servos uising the Adafruit ServoKit LIbrary
+        self.kitB = ServoKit(channels=16, address=0x41) #Defininng a new set of servos uising the Adafruit ServoKit LIbrary
+          
         #DefinING servo indices
         ## FRONT LEFT
         self.front_left_hip   = 10
@@ -46,14 +47,20 @@ class motor_config():
         self.right_leg_servo_list = [self.front_right_upper,self.front_right_lower,self.back_right_upper,self.back_right_lower]
         self.left_leg_servos_list = [ self.front_left_upper, self.front_left_lower,self.back_left_upper,self.back_left_lower]
         self.hip_opposite_list = [self.front_right_hip,self.back_left_hip]
-
+        
+        # self.front_leg_servo_list = [self.front_right_upper,self.front_right_lower, self.front_left_upper, self.front_left_lower]
+        # self.back_leg_servos_list = [self.back_left_upper,self.back_left_lower, self.back_right_upper,self.back_right_lower]
+        # self.hip_opposite_list = [self.front_right_hip,self.back_left_hip]
+        
         #applying calibration values to all servos
         self.create()
 
     def create(self):
         for i in range(16):
-            self.kit.servo[i].actuation_range = 180
-            self.kit.servo[i].set_pulse_width_range(self.pwm_min, self.pwm_max)
+            self.kitF.servo[i].actuation_range = 180
+            self.kitF.servo[i].set_pulse_width_range(self.pwm_min, self.pwm_max)
+            self.kitB.servo[i].actuation_range = 180
+            self.kitB.servo[i].set_pulse_width_range(self.pwm_min, self.pwm_max)
     def calibrate_servo(self,servo_number):
         cal = False
         while cal == False:  
@@ -69,11 +76,14 @@ class motor_config():
         
         # Takes 180-angle so that the movement it the same as the right lef
         if servo_number in self.left_leg_servos_list:
-            self.kit.servo[servo_number].angle = 180 - angle
+            self.kitF.servo[servo_number].angle = 180 - angle
+            self.kitB.servo[servo_number].angle = 180 - angle           
         elif servo_number in self.hip_opposite_list: #corrects hip angle such that higher numbers are angles of elevation. Higher hip values fo all lift up
-            self.kit.servo[servo_number].angle = 180 - angle
+            self.kitF.servo[servo_number].angle = 180 - angle
+            self.kitB.servo[servo_number].angle = 180 - angle   
         else:
-            self.kit.servo[servo_number].angle = angle
+            self.kitF.servo[servo_number].angle = angle
+            self.kitB.servo[servo_number].angle = angle   
     def relax_all_motors(self):
         """Relaxes desired servos so that they appear to be turned off. 
 
@@ -85,7 +95,8 @@ class motor_config():
 
         for i in range(16):
             try:
-                self.kit.servo[i].angle = None
+                self.kitF.servo[i].angle = None
+                self.kitB.servo[i].angle = None
             except Exception as e:
                 print(f"Error occurred with servo {i}. Error message: {e}")
         

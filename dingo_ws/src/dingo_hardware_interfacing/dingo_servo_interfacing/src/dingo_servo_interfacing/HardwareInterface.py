@@ -10,7 +10,8 @@ class HardwareInterface():
         self.pwm_min = 370
         self.link = link
         self.servo_angles = np.zeros((3,4))
-        self.kit = ServoKit(channels=16) #Defininng a new set of servos uising the Adafruit ServoKit LIbrary
+        self.kitF = ServoKit(channels=16) #Defininng a new set of servos uising the Adafruit ServoKit LIbrary
+        self.kitB = ServoKit(channels=16, address=0x41) #Defininng a new set of servos uising the Adafruit ServoKit LIbrary
         
         """ SERVO INDICES, CALIBRATION MULTIPLIERS AND OFFSETS
             #   ROW:    which joint of leg to control 0:hip, 1: upper leg, 2: lower leg
@@ -53,8 +54,11 @@ class HardwareInterface():
 
     def create(self):
         for i in range(16):
-            self.kit.servo[i].actuation_range = 180
-            self.kit.servo[i].set_pulse_width_range(self.pwm_min, self.pwm_max)
+            self.kitF.servo[i].actuation_range = 180
+            self.kitF.servo[i].set_pulse_width_range(self.pwm_min, self.pwm_max)
+            self.kitB.servo[i].actuation_range = 180
+            self.kitB.servo[i].set_pulse_width_range(self.pwm_min, self.pwm_max)
+
 
     def set_actuator_postions(self, joint_angles):
         """Converts all angles found via inverse kinematics to the angles needed at the servo by applying multipliers
@@ -74,10 +78,17 @@ class HardwareInterface():
         # print('Final angles for actuation: ',self.servo_angles)    
         for leg_index in range(4):
             for axis_index in range(3):
-                try:
-                    self.kit.servo[self.pins[axis_index,leg_index]].angle = self.servo_angles[axis_index,leg_index]
-                except:
-                    rospy.logwarn("Warning - I2C IO error")
+                if(leg_index < 2):
+                    try:
+                        self.kitF.servo[self.pins[axis_index,leg_index]].angle = self.servo_angles[axis_index,leg_index]
+                    except:
+                        rospy.logwarn("Warning - I2C IO error")                
+                else:
+                    try:
+                        self.kitB.servo[self.pins[axis_index,leg_index]].angle = self.servo_angles[axis_index,leg_index]
+                    except:
+                        rospy.logwarn("Warning - I2C IO error")           
+
 ## HERE ##
 
     ##  This method is used only in the calibrate servos file will make something similar to command individual actuators. 
@@ -94,7 +105,8 @@ class HardwareInterface():
         for leg_index in range(4):
             for axis_index in range(3):
                 if servo_list[axis_index,leg_index] == 1:
-                    self.kit.servo[self.pins[axis_index,leg_index]].angle = None
+                    self.kitF.servo[self.pins[axis_index,leg_index]].angle = None
+                    self.kitB.servo[self.pins[axis_index,leg_index]].angle = None
 
 
     def joint_angles_to_servo_angles(self,joint_angles):
