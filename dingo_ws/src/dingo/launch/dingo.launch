@@ -31,9 +31,10 @@
 
     <group if="$(arg use_auto)">
         <node pkg = "dingo_input_interfacing" type = "AutoMove.py" name = "auto_input_listener" output="screen"></node>
+        <!-- <include file="$(find wit_ros_imu)/launch/imu.launch"/> -->
+        <!-- <include file="$(find rplidar_ros)/launch/rplidar_a1.launch"/> -->
     </group>
     
     <!-- Dingo Driver -->
-    <node pkg="dingo" type="dingo_driver.py"
-        name="dingo" args="$(arg is_sim) $(arg is_physical) $(arg use_imu)" output="screen"/>
+    <node pkg="dingo" type="dingo_driver.py" name="dingo" args="$(arg is_sim) $(arg is_physical) $(arg use_imu)" output="screen"/>
 </launch>

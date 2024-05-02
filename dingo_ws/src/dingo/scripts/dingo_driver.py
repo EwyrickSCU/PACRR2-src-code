@@ -27,7 +27,14 @@ from dingo_control.Kinematics import four_legs_inverse_kinematics
 from dingo_control.Config import Configuration
 from dingo_control.msg import TaskSpace, JointSpace, Angle
 from std_msgs.msg import Bool, Int32
+from sensor_msgs.msg import Imu
+from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
+from nav_msgs.msg import Odometry
+# from dingo_control.util import quaternion_to_euler
+from gazebo_msgs.msg import ModelStates
 from sensor_msgs.msg import LaserScan
+from matplotlib.colors import ListedColormap
+from dingo_input_interfacing import InputInterfacePublisher
 
 if is_physical:
     from dingo_servo_interfacing.HardwareInterface import HardwareInterface
@@ -82,6 +89,9 @@ class DingoDriver:
         )
 
         self.state = State()
+        self.state_publisher = rospy.Publisher("dingo_state", Int32, queue_size=10)
+
+
         rospy.loginfo("Creating input listener...")
         self.input_interface = InputInterface(self.config)
         rospy.loginfo("Input listener successfully initialised... Robot will now receive commands via Joy messages")

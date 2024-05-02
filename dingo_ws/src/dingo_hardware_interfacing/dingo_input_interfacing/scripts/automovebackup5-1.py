@@ -13,7 +13,7 @@ from sensor_msgs.msg import Imu
 from timer import timer
 from sshkeyboard import listen_keyboard, stop_listening
 import random
-
+import math
 
 class AutoMove:
     def __init__(self):
@@ -25,10 +25,10 @@ class AutoMove:
         self.scan_message = rospy.Subscriber("/scan", LaserScan, self.laser_callback)
 
 
-
-        self.odom_message = rospy.Subscriber("/dingoodom", Odometry, self.odom_callback)
-
-
+        # Comment following line if using real dog, else comment the line after the next (for simulation)    
+        # self.odom_message = rospy.Subscriber("/dingoodom", Odometry, self.sim_odom_callback)
+        self.odom_message = rospy.Subscriber("/wit/imu", Imu, self)
+        
 
         self.currentTrot = 0
         self.obstacleAverage = 100
@@ -43,12 +43,15 @@ class AutoMove:
         self.velocity_y = 0.0
         self.velocity_th = 0.0
         
+        self.moveCounter = 0
 
         self.distance_x = 0.0
         self.distance_y = 0.0
         self.prev_linear_velocity_x = None
         self.prev_linear_velocity_y = None
-
+        self.roll_x = 0
+        self.pitch_y = 0 
+        self.yaw_z = 0
 
 
         self.x = 0.0
@@ -59,7 +62,7 @@ class AutoMove:
         self.prev_distance_backward = None
         self.prev_distance_right = None
         self.prev_distance_left = None
-        # self.start_keyboard_listener()
+        self.start_keyboard_listener()
     
     def start_keyboard_listener(self):
         keyboard_thread = threading.Thread(target=self.start_listen_keyboard)
@@ -68,6 +71,28 @@ class AutoMove:
     def start_listen_keyboard(self):
         listen_keyboard(on_press=self.on_press, on_release=self.on_release)
 
+
+    def euler_from_quaternion(self, x, y, z, w):
+        """
+        Convert a quaternion into euler angles (roll, pitch, yaw)
+        roll is rotation around x in radians (counterclockwise)
+        pitch is rotation around y in radians (counterclockwise)
+        yaw is rotation around z in radians (counterclockwise)
+        """
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + y * y)
+        roll_x = math.atan2(t0, t1)
+     
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        pitch_y = math.asin(t2)
+     
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw_z = math.atan2(t3, t4)
+     
+        return roll_x, pitch_y, yaw_z # in radians
     def on_press(self,key):
         print("press detected")
         if key == 'w':
@@ -80,17 +105,98 @@ class AutoMove:
     def on_release(self, key):
         pass
     
-    def odom_callback(self, msg):
-        print("printing odoms")
-        print(msg)
-
-
+    def sim_odom_callback(self, msg):
+        # print("printing odoms")
+        # print(msg)
         self.x_position = msg.pose.pose.position.x
-        self.y_postion = msg.pose.pose.position.x
+        self.y_position = msg.pose.pose.position.y
+        self.x_quaternion = msg.pose.pose.orientation.x
+        self.y_quaternion = msg.pose.pose.orientation.y
+        self.z_quaternion = msg.pose.pose.orientation.z
+        self.w_quaternion = msg.pose.pose.orientation.w
         # print("x")
         # print(self.x_position)
         # pass
+    def odom_callback(self, msg):
+        self.x_quaternion = msg.orientation.x
+        self.y_quaternion = msg.orientation.y
+        self.z_quaternion = msg.orientation.z
+        self.w_quaternion = msg.orientation.w
+        self.roll_x, self.pitch_y, self.yaw_z = self.euler_from_quaternion(self.x_quaternion, self.y_quaternion, self.z_quaternion, self.w_quaternion)
+    
 
+    def move_for_angle(self, angle):
+
+        if angle>2*math.pi or angle< -2*math.pi:
+            print("invalid turn angle")
+            return False
+
+        msg = self.current_joy_message
+
+        current_angle = self.yaw_z
+        angle_offset = 0
+        adjusted_angle = angle
+        if current_angle+angle>math.pi:
+            angle_offset = 2*math.pi
+        else:
+            angle_offset = 0
+        current_angle = current_angle - angle_offset
+        adjusted_angle = current_angle + angle
+
+        if angle>0:
+            if current_angle+angle>math.pi:
+                angle_offset = 2*math.pi
+            else:
+                angle_offset = 0
+            current_angle = current_angle - angle_offset
+            adjusted_angle = current_angle + angle
+
+
+
+            msg.axes[3] = 1.0 
+            self.current_joy_message = msg
+            self.publish_current_command()
+            while current_angle<adjusted_angle:
+                # print("cur angle")
+                # print(current_angle)
+                # print("target angle")
+                # print(adjusted_angle)
+
+                self.timeSleep(0.1)
+                if self.yaw_z >0:
+                    current_angle = self.yaw_z - angle_offset
+                else:
+                    current_angle = self.yaw_z
+
+            msg.axes[3] = 0.0
+            self.current_joy_message = msg
+            self.publish_current_command()
+        else:
+            if current_angle+angle<-math.pi:
+                angle_offset = -2*math.pi
+            else:
+                angle_offset = 0
+            current_angle = current_angle - angle_offset
+            adjusted_angle = current_angle + angle
+            
+            msg.axes[3] = -1.0 
+            self.current_joy_message = msg
+            self.publish_current_command()
+            while current_angle>adjusted_angle:
+                # print("cur angle")
+                # print(current_angle)
+                # print("target angle")
+                # print(adjusted_angle)
+
+                self.timeSleep(0.1)
+                if self.yaw_z < 0:
+                    current_angle = self.yaw_z - angle_offset
+                else:
+                    current_angle = self.yaw_z
+
+            msg.axes[3] = 0.0
+            self.current_joy_message = msg
+            self.publish_current_command()
     
     def timeSleep(self, duration, dir="f"):
         with timer() as t:
@@ -232,6 +338,40 @@ class AutoMove:
         self.current_joy_message.header.stamp = rospy.Time.now()
         self.joystick_message_pub.publish(self.current_joy_message)
 
+    def mag(self, x, y):
+        return sqrt(pow(x,2) + pow(y,2))
+    
+    def move_straight_for_distance(self, distance):
+        print("Distance")
+        print(distance)
+        msg = self.current_joy_message
+        reference_x = self.x_position
+        reference_y = self.y_position
+        
+        current_x = 0.0
+        current_y = 0.0
+        current_mag = 0.0
+
+        msg.axes[1] = 0.7  # Assuming positive value moves forward
+        self.current_joy_message = msg
+        self.publish_current_command()
+
+
+        while(current_mag <= distance):
+            current_x = self.x_position - reference_x
+            current_y = self.y_position - reference_y
+            current_mag = self.mag(current_x,current_y)
+            print("Current mag")
+            print(current_mag)
+            if self.timeSleep(0.1) == False:
+                break
+        
+        msg.axes[1] = 0.0  # Stop movement
+        self.current_joy_message = msg
+        self.publish_current_command()
+
+    
+
 def signal_handler(sig, frame):
     sys.exit(0)
 
@@ -265,28 +405,30 @@ def main():
                 print("Right Distance")
                 print(auto_mover.leftObstacleAverage )
                 # auto_mover.move_backward_for_duration(3)
-                if auto_mover.obstacleAverage <0.5:
-                    auto_mover.timeSleep(0.5)
-                    print("Moving Backward")
-                    # if auto_mover.backObstacleAverage > 1:
-                    auto_mover.move_backward_for_duration(2)
-                    turnAmount = random.randint(1, 4)
-                    turnDirection = random.random()-0.5
-                    print("turn amount")
-                    print(turnAmount)
-                    print("turnDirection")
-                    print(turnDirection)
-                    if turnDirection < 0:
-                        auto_mover.move_left_for_duration(turnAmount)
-                    else:
-                        auto_mover.move_right_for_duration(turnAmount)
+                # if auto_mover.obstacleAverage <0.5:
+                #     auto_mover.timeSleep(0.5)
+                #     print("Moving Backward")
+                #     # if auto_mover.backObstacleAverage > 1:
+                #     auto_mover.move_backward_for_duration(2)
+                #     turnAmount = random.randint(1, 4)
+                #     turnDirection = random.random()-0.5
+                #     print("turn amount")
+                #     print(turnAmount)
+                #     print("turnDirection")
+                #     print(turnDirection)
+                #     if turnDirection < 0:
+                #         auto_mover.move_left_for_duration(turnAmount)
+                #     else:
+                #         auto_mover.move_right_for_duration(turnAmount)
 
-                    # auto_mover.move_right_for_duration(3)
+                #     # auto_mover.move_right_for_duration(3)
 
-                else:
-                    print("Moving Forward")
-                    auto_mover.move_forward_for_duration(2)
-                # auto_mover.timeSleep(0.5)
+                # else:
+                #     print("Moving Forward")
+                #     auto_mover.move_forward_for_duration(2)
+                
+                auto_mover.timeSleep(0.5)
+                # auto_mover.move_straight_for_distance(5)
                 rate.sleep()
     except rospy.ROSInterruptException:
         rospy.loginfo("Keyboard node interrupted.")
