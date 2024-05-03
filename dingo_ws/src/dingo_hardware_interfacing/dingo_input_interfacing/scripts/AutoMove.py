@@ -57,7 +57,7 @@ class AutoMove:
         self.prev_linear_velocity_x = None
         self.prev_linear_velocity_y = None
 
-
+        self.test_var = 0.0
 
         self.x = 0.0
         self.y = 0.0
@@ -107,6 +107,8 @@ class AutoMove:
         self.z_quaternion = msg.orientation.z
         self.w_quaternion = msg.orientation.w
         self.roll_x, self.pitch_y, self.yaw_z = self.euler_from_quaternion(self.x_quaternion, self.y_quaternion, self.z_quaternion, self.w_quaternion)
+
+        self.test_var = self.test_var + 1
         
         # Extract angular velocity
         self.angular_velocity_x = msg.angular_velocity.x
@@ -118,32 +120,10 @@ class AutoMove:
         self.linear_acceleration_y = msg.linear_acceleration.y
         self.linear_acceleration_z = msg.linear_acceleration.z
         
-        # Extract linear accelerations
-        ax = msg.linear_acceleration.x
-        ay = msg.linear_acceleration.y
-        az = msg.linear_acceleration.z
-
-        # Integrate accelerations to obtain velocities using trapezoidal rule
-        self.vx += 0.5 * (ax + self.last_ax) * self.dt
-        self.vy += 0.5 * (ay + self.last_ay) * self.dt
-        self.vz += 0.5 * (az + self.last_az) * self.dt
-
-        # Integrate velocities to obtain positions using trapezoidal rule
-        self.px += 0.5 * (self.vx + self.last_vx) * self.dt
-        self.py += 0.5 * (self.vy + self.last_vy) * self.dt
-        self.pz += 0.5 * (self.vz + self.last_vz) * self.dt
-
-        # Store current accelerations for next iteration
-        self.last_ax = ax
-        self.last_ay = ay
-        self.last_az = az
-
-        # Store current velocities for next iteration
-        self.last_vx = self.vx
-        self.last_vy = self.vy
-        self.last_vz = self.vz
-
         
+
+    def test_print(self):
+        print(self.test_var)
 
 
     
@@ -422,16 +402,37 @@ class AutoMove:
 
 
 
+    def imu_position_integration(self):
+        # Extract linear accelerations
+        ax = self.linear_acceleration_x
+        ay = self.linear_acceleration_y
+        az = self.linear_acceleration_z
+        print("ax = ", ax, "| ay = ", ay, "| az = ", az)
 
+        # Integrate accelerations to obtain velocities using trapezoidal rule
+        self.vx += 0.5 * (ax + self.last_ax) * self.dt
+        self.vy += 0.5 * (ay + self.last_ay) * self.dt
+        self.vz += 0.5 * (az + self.last_az) * self.dt
+
+        # Integrate velocities to obtain positions using trapezoidal rule
+        self.px += 0.5 * (self.vx + self.last_vx) * self.dt
+        self.py += 0.5 * (self.vy + self.last_vy) * self.dt
+        self.pz += 0.5 * (self.vz + self.last_vz) * self.dt
+
+        # Store current accelerations for next iteration
+        self.last_ax = ax
+        self.last_ay = ay
+        self.last_az = az
+
+        # Store current velocities for next iteration
+        self.last_vx = self.vx
+        self.last_vy = self.vy
+        self.last_vz = self.vz
 
 
     def move_straight_for_distance(self, distance):
         print("Distance")
         print(distance)
-
-        
-
-        self.linear_acceleration_x
 
         msg = self.current_joy_message
 
@@ -448,8 +449,8 @@ class AutoMove:
 
 
         while(current_mag <= distance):
-            current_x = self.x_position - reference_x
-            current_y = self.y_position - reference_y
+            current_x = self.px - reference_x
+            current_y = self.py - reference_y
             current_mag = self.mag(current_x,current_y)
             print("Current mag")
             print(current_mag)
@@ -460,6 +461,8 @@ class AutoMove:
         self.current_joy_message = msg
         self.publish_current_command()
 
+
+    
 
     
 
@@ -638,10 +641,12 @@ def main():
                 #     auto_mover.timeSleep(0.5)
 
                 
-                auto_mover.move_straight_for_distance(2)
+                #auto_mover.move_straight_for_distance(2)
                 # auto_mover.move_for_angle(1.57)
-                auto_mover.timeSleep(2)
-                rate.sleep()
+                auto_mover.test_print()
+
+                # auto_mover.timeSleep(1)
+                # rate.sleep()
                 
     except rospy.ROSInterruptException:
         rospy.loginfo("Keyboard node interrupted.")

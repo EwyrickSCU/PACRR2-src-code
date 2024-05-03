@@ -72,6 +72,123 @@
     </collision>
   </link>
 
+
+  <!-- LiDar Representation-->
+  
+
+  <link 
+    name="laser_frame">
+        <visual>
+          <geometry>
+              <cylinder radius="0.05" length="0.04"/>
+          </geometry>
+          <material name="">
+              <color rgba="1 0 0 1" />
+          </material>
+        </visual>
+        <collision>
+          <geometry>
+              <cylinder radius="0.05" length="0.04"/>
+          </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.6"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+  </link>
+
+  <joint 
+    name="laser_joint" 
+    type="fixed">
+        <parent link="base_link"/>
+        <child link="laser_frame"/>
+        <origin xyz="0.017 0 0.05" rpy="0 0 0"/>
+  </joint>
+
+  <sensor name="laser" type="ray">
+    <pose> 0 0 0 0 0 0 </pose>
+    <visualize>true</visualize>
+    <update_rate>10</update_rate>
+    <ray> 
+    <scan>
+        <horizontal>
+            <samples>360</samples>
+            <min_angle>-3.14</min_angle>
+            <max_angle>3.14</max_angle>
+        </horizontal>
+    </scan>
+    <range>
+        <min>0.3</min>
+        <max>12</max>
+    </range>
+  </ray>
+      <plugin name="laser_controller" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+            <argument>~/out:=scan</argument>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+        <frame_name>laser_frame</frame_name>
+      </plugin>
+  </sensor>
+
+    <link 
+    name="IMU_nose_frame">
+        <visual>
+          <geometry>
+            <box size="0.02 0.015 0.005"/>
+          </geometry>
+          <material name="">
+              <color rgba="1 0 0 1" />
+          </material>
+        </visual>
+        <collision>
+          <geometry>
+            <box size="0.02 0.015 0.005"/>
+          </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.002"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+  </link>
+
+  <joint 
+    name="IMU_nose_joint" 
+    type="fixed">
+        <parent link="base_link"/>
+        <child link="IMU_nose_frame"/>
+        <origin xyz="0.18 0 0.04" rpy="0 0 0"/>
+  </joint>
+
+   <link 
+    name="IMU_tail_frame">
+        <visual>
+          <geometry>
+            <box size="0.02 0.015 0.005"/>
+          </geometry>
+          <material name="">
+              <color rgba="1 0 0 1" />
+          </material>
+        </visual>
+        <collision>
+          <geometry>
+            <box size="0.02 0.015 0.005"/>
+          </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.002"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+  </link>
+
+  <joint 
+    name="IMU_tail_joint" 
+    type="fixed">
+        <parent link="base_link"/>
+        <child link="IMU_tail_frame"/>
+        <origin xyz="-0.1685 0 0.04" rpy="0 0 0"/>
+  </joint>
+
   <!-- FL_link1 -->
   <link
     name="FL_link1">
@@ -910,9 +1027,16 @@
       xyz="0 0 0" />
   </joint>
 
+  <!-- BASE_FOOTPRINT_LINK and JOINT -->
+  <link name="base_footprint">
+    
+  </link>
 
-
-
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="base_footprint"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
 
   <!-- ROS control plugin -->
   <gazebo>
@@ -944,6 +1068,88 @@
     </sensor>
   </gazebo>
 
+  <gazebo reference="IMU_nose_frame">
+    <gravity>true</gravity>
+    <sensor name="imu_nose_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      <topic>__default_topic__</topic>
+      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+        <topicName>notspot_imu/nose_base_link_orientation</topicName>
+        <bodyName>imu_nose_link</bodyName>
+        <updateRateHZ>15.0</updateRateHZ>
+        <gaussianNoise>0.0</gaussianNoise>
+        <xyzOffset>0 0 0</xyzOffset>
+        <rpyOffset>0 0 0</rpyOffset>
+        <frameName>IMU_nose_frame</frameName>
+        <initialOrientationAsReference>false</initialOrientationAsReference>
+      </plugin>
+      <pose>0 0 0 0 0 0</pose>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="IMU_tail_frame">
+    <gravity>true</gravity>
+    <sensor name="imu_tail_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      <topic>__default_topic__</topic>
+      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+        <topicName>notspot_imu/tail_base_link_orientation</topicName>
+        <bodyName>imu_tail_link</bodyName>
+        <updateRateHZ>15.0</updateRateHZ>
+        <gaussianNoise>0.0</gaussianNoise>
+        <xyzOffset>0 0 0</xyzOffset>
+        <rpyOffset>0 0 0</rpyOffset>
+        <frameName>IMU_tail_frame</frameName>
+        <initialOrientationAsReference>false</initialOrientationAsReference>
+      </plugin>
+      <pose>0 0 0 0 0 0</pose>
+    </sensor>
+  </gazebo>
+
+  <!-- D435f -->
+ 
+  <!-- Add the RealSense camera to the robot model -->
+  <!-- D435F Model -->
+  <!--<xacro:include filename="$(find dingo_description)/urdf/sensor_d435.urdf.xacro"/>
+  <xacro:_d435 parent="base_link" origin="0 0 0" name="realsense_camera"/>
+  </xacro:macro>-->
+
+  <!-- LiDar Sensor-->
+  <gazebo reference="laser_frame">
+    <sensor name="laser" type="ray">
+      <pose> 0 0 0 0 0 0 </pose>
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate>
+      <topic>__default_topic__</topic>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1145</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14</min_angle>
+            <max_angle>3.14</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.3</min>
+          <max>12</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="gazebo_ros_laser_controller" filename="libgazebo_ros_laser.so"> 	<!-- "libgazebo_ros_ray_sensor.so" -->
+        <topicName>scan</topicName>
+        <!-- <updateRateHZ>15.0</updateRateHZ> -->
+        <outputType>sensor_msgs/LaserScan</outputType>
+        <frameName>laser_frame</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  
   <!-- Joint state publisher plugin -->
   <gazebo>
     <plugin name="joint_state_publisher" filename="libgazebo_ros_joint_state_publisher.so">
