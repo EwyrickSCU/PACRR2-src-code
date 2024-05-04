@@ -36,6 +36,10 @@ from sensor_msgs.msg import LaserScan
 from matplotlib.colors import ListedColormap
 from dingo_input_interfacing import InputInterfacePublisher
 
+import math
+from math import sin, cos, pi
+import tf
+
 if is_physical:
     from dingo_servo_interfacing.HardwareInterface import HardwareInterface
     from dingo_peripheral_interfacing.IMU import IMU

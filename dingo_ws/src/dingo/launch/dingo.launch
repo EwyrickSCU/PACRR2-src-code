@@ -1,8 +1,8 @@
 <launch>
     <arg name="is_sim" default="0"/>
     <arg name="is_physical" default="1"/>
-    <arg name="use_joystick" default="1"/>
-    <arg name="use_keyboard" default="0"/>
+    <arg name="use_joystick" default="0"/>
+    <arg name="use_keyboard" default="1"/>
     <arg name="serial_port" default="/dev/ttyS0"/>
     <arg name="use_imu" default="0"/>
     <arg name="use_auto" default="0"/>
@@ -10,7 +10,8 @@
     <group if="$(arg is_physical)">
         <!-- Communication Node between Arduino and Pi -->
         <!-- <node pkg="rosserial_python" type="serial_node.py" name="dingo_rosserial" args="$(arg serial_port)" output="screen"/> -->
-
+        <include file="$(find dingo_description)/launch/dingo_state_publisher.launch"/>
+        <include file="$(find robot_localization)/launch/ekf_template.launch"/>
         <!-- LCD Screen -->
         <!-- <node pkg = "dingo_peripheral_interfacing" type = "dingo_lcd_interfacing.py" name = "dingo_LCD_node" output="screen"></node> -->
     </group>
