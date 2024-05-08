@@ -1,0 +1,2 @@
+realsense-ros-2.3.2/realsense2_camera:realsense-ros-2.3.2/realsense2_description
+-DCATKIN_DEVEL_PREFIX=/home/pacrr-pi/pacrr-src-code/dingo_ws/src/d435f_ws/devel -DCMAKE_INSTALL_PREFIX=/home/pacrr-pi/pacrr-src-code/dingo_ws/src/d435f_ws/install -G Unix Makefiles

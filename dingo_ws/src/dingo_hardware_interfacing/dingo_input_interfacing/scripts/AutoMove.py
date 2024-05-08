@@ -533,11 +533,13 @@ class AutoMove:
 
     def move_forward_for_duration(self, duration):
         msg = self.current_joy_message
-        msg.axes[1] = 0.7  # Assuming positive value moves forward
+        msg.axes[1] = 0.5  # Assuming positive value moves forward
+        msg.axes[3] = 0.1*self.speed_multiplier
         self.current_joy_message = msg
         self.publish_current_command()
         self.timeSleep(duration, "f")  # Sleep for the specified duration
         msg.axes[1] = 0.0  # Stop movement after duration
+        msg.axes[3] = 0.0  # Stop movement after duration
         self.current_joy_message = msg
         self.publish_current_command()
 
@@ -604,49 +606,43 @@ def main():
                 auto_mover.enable()
                 # pass
             if auto_mover.disabled == False and auto_mover.currentTrot != 0:
-                print("Front Distance")
-                print(auto_mover.obstacleAverage )
-                print("Back Distance")
-                print(auto_mover.backObstacleAverage )
-                print("Left Distance")
-                print(auto_mover.rightObstacleAverage )
-                print("Right Distance")
-                print(auto_mover.leftObstacleAverage )
+                # print("Front Distance")
+                # print(auto_mover.obstacleAverage )
+                # print("Back Distance")
+                # print(auto_mover.backObstacleAverage )
+                # print("Left Distance")
+                # print(auto_mover.rightObstacleAverage )
+                # print("Right Distance")
+                # print(auto_mover.leftObstacleAverage )
                 #auto_mover.move_for_angle(90, "CCW")
                 # auto_mover.move_backward_for_duration(3)
                 # auto_mover.move_straight_for_distance(10)
-                # if auto_mover.obstacleAverage <0.5:
-                #     auto_mover.timeSleep(0.5)
-                #     print("Moving Backward")
-                #     # if auto_mover.backObstacleAverage > 1:
-                #     auto_mover.move_backward_for_duration(2)
-                #     turnAmount = random.randint(1, 4)
-                #     turnDirection = random.random()-0.5
-                #     print("turn amount")
-                #     print(turnAmount)
-                #     print("turnDirection")
-                #     print(turnDirection)
-                #     if turnDirection < 0:
-                #         auto_mover.move_left_for_duration(turnAmount)
-                #     else:
-                #         auto_mover.move_right_for_duration(turnAmount)
+                if auto_mover.obstacleAverage <0.5:
+                    auto_mover.timeSleep(1)
+                    print("Moving Backward")
+                    # if auto_mover.backObstacleAverage > 1:
+                    auto_mover.move_backward_for_duration(2)
+                    turnAmount = random.randint(1, 4)
+                    turnDirection = random.random()-0.5
+                    print("turn amount")
+                    print(turnAmount)
+                    print("turnDirection")
+                    print(turnDirection)
+                    if turnDirection < 0:
+                        auto_mover.move_left_for_duration(turnAmount)
+                    else:
+                        auto_mover.move_right_for_duration(turnAmount)
 
-                #     auto_mover.move_right_for_duration(3)
 
-                # else:
-                #     print("Moving Forward")
-                #     auto_mover.move_forward_for_duration(2)
-                #     #auto_mover.move_straight_for_distance(10)
-                #     # auto_mover.move_for_angle(90, "CCW")
-                #     auto_mover.timeSleep(0.5)
-
-                
-                #auto_mover.move_straight_for_distance(2)
-                # auto_mover.move_for_angle(1.57)
-                auto_mover.test_print()
+                else:
+                    print("Moving Forward")
+                    auto_mover.move_forward_for_duration(2)
+                    #auto_mover.move_straight_for_distance(10)
+                    # auto_mover.move_for_angle(90, "CCW")
+                    auto_mover.timeSleep(0.5)
 
                 # auto_mover.timeSleep(1)
-                # rate.sleep()
+                rate.sleep()
                 
     except rospy.ROSInterruptException:
         rospy.loginfo("Keyboard node interrupted.")

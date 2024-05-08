@@ -57,6 +57,8 @@ class DingoDriver:
         self.joint_command_sub = rospy.Subscriber("/joint_space_cmd", JointSpace, self.run_joint_space_command)
         self.task_command_sub = rospy.Subscriber("/task_space_cmd", TaskSpace, self.run_task_space_command)
         self.estop_status_sub = rospy.Subscriber("/emergency_stop_status", Bool, self.update_emergency_stop_status)
+        odom_pub = rospy.Publisher("odom", Odometry, queue_size=50)
+        odom_broadcaster = tf.TransformBroadcaster()
         self.external_commands_enabled = 0
 
         if self.is_sim:
@@ -130,6 +132,9 @@ class DingoDriver:
             self.controller.run(self.state, command)
             self.controller.publish_joint_space_command(self.state.joint_angles)
             self.controller.publish_task_space_command(self.state.rotated_foot_locations)
+
+
+
             if self.is_sim:
                     self.publish_joints_to_sim(self.state.joint_angles)
             if self.is_physical:

@@ -33,6 +33,8 @@ class Keyboard:
 
         if key == 'w' or key == 'W':
             msg.axes[1] = 0.5*self.speed_multiplier
+            msg.axes[3] = 0.1*self.speed_multiplier
+            # msg.axes[0] = -0.1*self.speed_multiplier
         elif key == 's' or key == 'S':
             msg.axes[1] = -0.5*self.speed_multiplier
         elif key == 'a' or key == 'A':
@@ -73,6 +75,8 @@ class Keyboard:
 
         if key == 'w' or key == 'W':
             msg.axes[1] = 0.0
+            msg.axes[3] = 0.0
+            msg.axes[0] = 0.0
         elif key == 's' or key == 'S':
             msg.axes[1] = 0.0
         elif key == 'a' or key == 'A':

@@ -405,29 +405,29 @@ def main():
                 print("Right Distance")
                 print(auto_mover.leftObstacleAverage )
                 # auto_mover.move_backward_for_duration(3)
-                # if auto_mover.obstacleAverage <0.5:
-                #     auto_mover.timeSleep(0.5)
-                #     print("Moving Backward")
-                #     # if auto_mover.backObstacleAverage > 1:
-                #     auto_mover.move_backward_for_duration(2)
-                #     turnAmount = random.randint(1, 4)
-                #     turnDirection = random.random()-0.5
-                #     print("turn amount")
-                #     print(turnAmount)
-                #     print("turnDirection")
-                #     print(turnDirection)
-                #     if turnDirection < 0:
-                #         auto_mover.move_left_for_duration(turnAmount)
-                #     else:
-                #         auto_mover.move_right_for_duration(turnAmount)
+                if auto_mover.obstacleAverage <0.5:
+                    auto_mover.timeSleep(0.5)
+                    print("Moving Backward")
+                    # if auto_mover.backObstacleAverage > 1:
+                    auto_mover.move_backward_for_duration(2)
+                    turnAmount = random.randint(1, 4)
+                    turnDirection = random.random()-0.5
+                    print("turn amount")
+                    print(turnAmount)
+                    print("turnDirection")
+                    print(turnDirection)
+                    if turnDirection < 0:
+                        auto_mover.move_left_for_duration(turnAmount)
+                    else:
+                        auto_mover.move_right_for_duration(turnAmount)
 
-                #     # auto_mover.move_right_for_duration(3)
+                    # auto_mover.move_right_for_duration(3)
 
-                # else:
-                #     print("Moving Forward")
-                #     auto_mover.move_forward_for_duration(2)
+                else:
+                    print("Moving Forward")
+                    auto_mover.move_forward_for_duration(2)
                 
-                auto_mover.timeSleep(0.5)
+                # auto_mover.timeSleep(0.5)
                 # auto_mover.move_straight_for_distance(5)
                 rate.sleep()
     except rospy.ROSInterruptException:
