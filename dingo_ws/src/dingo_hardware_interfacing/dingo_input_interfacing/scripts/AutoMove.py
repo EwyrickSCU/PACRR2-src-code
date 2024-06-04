@@ -18,6 +18,9 @@ import random
 from gazebo_msgs.msg import ModelStates
 import math
 from sensor_msgs.msg import Imu
+from geometry_msgs.msg import PoseStamped
+from simple_pid import PID
+from contextlib import contextmanager
 
 
 class AutoMove:
@@ -28,10 +31,12 @@ class AutoMove:
         self.current_joy_message.buttons = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.state_message = rospy.Subscriber("dingo_state", Int32, self.state_callback)
         self.gazebo_message = rospy.Subscriber("/gazebo/model_states", ModelStates, self.gazebo_callback )
-        self.scan_message = rospy.Subscriber("/scan", LaserScan, self.laser_callback)
 
+        # self.scan_message = rospy.Subscriber("/scan", LaserScan, self.laser_callback)
+        # self.slam_message = rospy.Subscriber("/slam_out_pose", PoseStamped, self.slam_callback)
 
         self.odom_message = rospy.Subscriber("/wit/imu", Imu, self.odom_callback)
+        # self.odom_message = rospy.Subscriber("/imu/data", Imu, self.odom_callback)
         # self.odom_message = rospy.Subscriber("/dingoodom", Odometry, self.odom_callback)
 
 
@@ -68,6 +73,9 @@ class AutoMove:
         self.prev_distance_right = None
         self.prev_distance_left = None
         # self.start_keyboard_listener()
+        self.roll_x = 0.0
+        self.pitch_y =0.0
+        self.yaw_z =0.0
 
         # odom frame at start is 0,0,0
         self.dt = 0.01  # Assuming a constant time step
@@ -77,6 +85,11 @@ class AutoMove:
         self.px = 0.0    # Initial position in x direction
         self.py = 0.0    # Initial position in y direction
         self.pz = 0.0    # Initial position in z direction
+
+        # self.pid = PID(3.0,0.0, 3, setpoint=0.0)
+        self.pid = PID(3.0,0.0, 0, setpoint=0.0)
+        self.pid.output_limits = (-0.60, 0.60)
+
 
     def euler_from_quaternion(self, x, y, z, w):
         """
@@ -106,7 +119,11 @@ class AutoMove:
         self.y_quaternion = msg.orientation.y
         self.z_quaternion = msg.orientation.z
         self.w_quaternion = msg.orientation.w
-        self.roll_x, self.pitch_y, self.yaw_z = self.euler_from_quaternion(self.x_quaternion, self.y_quaternion, self.z_quaternion, self.w_quaternion)
+        # self.roll_x, self.pitch_y, self.yaw_z = self.euler_from_quaternion(self.x_quaternion, self.y_quaternion, self.z_quaternion, self.w_quaternion)
+        # print("x")
+        # print(self.roll_x)
+        # print(self.pitch_y)
+        # print(self.yaw_z)
 
         self.test_var = self.test_var + 1
         
@@ -120,20 +137,29 @@ class AutoMove:
         self.linear_acceleration_y = msg.linear_acceleration.y
         self.linear_acceleration_z = msg.linear_acceleration.z
         
-        
+    def slam_callback(self, msg):
+        self.px = msg.pose.position.x
+        self.py = msg.pose.position.y
+        self.x_quaternion = msg.pose.orientation.x
+        self.y_quaternion = msg.pose.orientation.y
+        self.z_quaternion = msg.pose.orientation.z
+        self.w_quaternion = msg.pose.orientation.w
+        self.roll_x, self.pitch_y, self.yaw_z = self.euler_from_quaternion(self.x_quaternion, self.y_quaternion, self.z_quaternion, self.w_quaternion)
+        self.yaw_z += 1.57
 
+        # print("x")
+        # print(self.roll_x)
+        # print(self.pitch_y)
+        # print(self.yaw_z)
+    
     def test_print(self):
         print(self.test_var)
 
-
-    
-    
-
-    
     def start_keyboard_listener(self):
         keyboard_thread = threading.Thread(target=self.start_listen_keyboard)
         keyboard_thread.daemon = True
         keyboard_thread.start()
+    
     def start_listen_keyboard(self):
         listen_keyboard(on_press=self.on_press, on_release=self.on_release)
 
@@ -146,6 +172,7 @@ class AutoMove:
             self.current_joy_message = Joy()
             self.publish_current_command()
             sys.exit(0)
+    
     def on_release(self, key):
         pass
     
@@ -165,6 +192,7 @@ class AutoMove:
         #     print(yaw_z)
         #     print("\n")
         #     self.gazebo_counter = 0
+    
     #imu position data
     def sim_odom_callback(self, msg):
         # print("printing odoms")
@@ -178,7 +206,6 @@ class AutoMove:
         # print("x")
         # print(self.x_position)
         # pass
-
     
     def timeSleep(self, duration, dir="f"):
         with timer() as t:
@@ -192,7 +219,6 @@ class AutoMove:
                         return False
             # print(t.elapse)
 
-    
     def laser_callback(self, msg):
         # print("scanned")
         # print(msg.ranges)
@@ -250,9 +276,6 @@ class AutoMove:
                     obstacleCount+=1
         if obstacleCount > 0:
             self.rightObstacleAverage = obstacleSum / obstacleCount
-
-
-
 
     def state_callback(self, msg):
         self.currentTrot = msg.data
@@ -347,10 +370,6 @@ class AutoMove:
             self.current_joy_message = msg
             self.publish_current_command()
 
-            
-
-
-
     # def move_for_angle(self,angle, direction = "CCW"):
     #     msg = self.current_joy_message
     #     target_theta = np.radians(angle)
@@ -400,8 +419,6 @@ class AutoMove:
     #     self.current_joy_message = msg
     #     self.publish_current_command()
 
-
-
     def imu_position_integration(self):
         # Extract linear accelerations
         ax = self.linear_acceleration_x
@@ -429,43 +446,91 @@ class AutoMove:
         self.last_vy = self.vy
         self.last_vz = self.vz
 
+    # def move_straight_for_distance(self, distance):
+    #     print("Distance")
+    #     print(distance)
 
-    def move_straight_for_distance(self, distance):
-        print("Distance")
-        print(distance)
+    #     msg = self.current_joy_message
 
+    #     reference_x = self.px
+    #     reference_y = self.py
+        
+    #     current_x = 0.0
+    #     current_y = 0.0
+    #     current_mag = 0.0
+
+    #     msg.axes[1] = 0.7  # Assuming positive value moves forward
+    #     msg.axes[3] = 0.1 
+    #     self.current_joy_message = msg
+    #     self.publish_current_command()
+
+
+    #     while(current_mag <= distance):
+    #         current_x = self.px - reference_x
+    #         current_y = self.py - reference_y
+    #         current_mag = self.mag(current_x,current_y)
+    #         print("PX")
+    #         print(self.px)
+    #         print("PY")
+    #         print(self.py)
+    #         print("Current mag")
+    #         print(current_mag)
+    #         # if self.timeSleep(0.1) == False:
+    #         #     breakself.yaw_z
+        
+    #     msg.axes[1] = 0.0  # Stop movement
+    #     msg.axes[3] = 0.0 
+    #     self.current_joy_message = msg
+    #     self.publish_current_command()
+
+    @contextmanager
+    def timer(self):
+        start = time.time()
+        class Timer:
+            @property
+            def elapse(self):
+                return time.time() - start
+        yield Timer()
+
+    def move_forward_for_duration(self, duration):
         msg = self.current_joy_message
-
-        reference_x = self.px
-        reference_y = self.py
-        
-        current_x = 0.0
-        current_y = 0.0
-        current_mag = 0.0
-
-        msg.axes[1] = 0.7  # Assuming positive value moves forward
+        msg.axes[1] = 0.5  # Assuming positive value moves forward
+        # msg.axes[3] = -0.7 # correction factor
         self.current_joy_message = msg
         self.publish_current_command()
 
-
-        while(current_mag <= distance):
-            current_x = self.px - reference_x
-            current_y = self.py - reference_y
-            current_mag = self.mag(current_x,current_y)
-            print("Current mag")
-            print(current_mag)
-            if self.timeSleep(0.1) == False:
-                break
+        startAngle = self.yaw_z
+        # self.pid.setpoint = startAngle
         
-        msg.axes[1] = 0.0  # Stop movement
+        with self.timer() as t:
+            while t.elapse < duration:
+                msg = self.current_joy_message
+
+                # Calculate the correction factor using the PID controller
+                with open('/home/pacrr-pi/pacrr-src-code/imuTest.txt', 'a') as file:
+                    # Write some text to the file
+                    file.write(str(self.yaw_z)+"\n")
+
+
+                correction = self.pid(self.yaw_z - startAngle)
+                with open('/home/pacrr-pi/pacrr-src-code/correction.txt', 'a') as file:
+                    # Write some text to the file
+                    file.write(str(correction)+"\n")
+                print("IMU: ", self.yaw_z - startAngle)
+                print("Correction: ", correction)
+                msg.axes[3] = correction
+                
+                self.current_joy_message = msg
+                self.publish_current_command()
+
+                rospy.sleep(0.05)
+                if self.obstacleAverage < 1:
+                    return False
+
+        msg.axes[1] = 0.0  # Stop movement after duration
+        msg.axes[3] = 0.0
         self.current_joy_message = msg
         self.publish_current_command()
-
-
-    
-
-    
-
 
     #if you want to go to 2 spots one after the other
     #c^2 = a^2 + b^2 -2ab*cos(angle C)
@@ -512,13 +577,6 @@ class AutoMove:
 
         self.move_straight_for_distance(c)
         
-
-
-
-    
-
-
-
     def move_left_for_duration(self, duration):
         msg = self.current_joy_message
         msg.axes[3] = 1.0
@@ -528,8 +586,6 @@ class AutoMove:
         msg.axes[3] = 0.0  # Stop movement after duration
         self.current_joy_message = msg
         self.publish_current_command()
-
-
 
     # def move_forward_for_duration(self, duration):
     #     msg = self.current_joy_message
@@ -544,18 +600,38 @@ class AutoMove:
     #     self.publish_current_command()
 
 
-    def move_forward_for_duration(self, duration):
-        msg = self.current_joy_message
-        msg.axes[1] = 0.5  # Assuming positive value moves forward
-        self.current_joy_message = msg
-        self.publish_current_command()
-        self.timeSleep(duration, "f")  # Sleep for the specified duration
-        msg.axes[1] = 0.0  # Stop movement after duration
-        self.current_joy_message = msg
-        self.publish_current_command()
+    # def move_forward_for_duration(self, duration):
+    #     msg = self.current_joy_message
+    #     msg.axes[1] = 0.5  # Assuming positive value moves forward
+    #     #msg.axes[3] = -0.30 # correction factor
+    #     self.current_joy_message = msg
+    #     self.publish_current_command()
+    #     # self.timeSleep(duration, "f")  # Sleep for the specified duration
+    #     startAngle = self.yaw_z
 
+        
+    #     with timer() as t:
+    #         while t.elapse < duration:
+    #             msg = self.current_joy_message
+    #             if self.yaw_z < startAngle:
+    #                 msg.axes[3] = 0.1 #0.15
+    #             else:
+    #                 msg.axes[3] = -0.1 #-0.15
+                
+    #             self.current_joy_message = msg
+    #             self.publish_current_command()
 
-
+    #             rospy.sleep(0.05)
+    #             if dir == "f":
+    #                 if self.obstacleAverage <1:
+    #                     return False
+    #             elif dir == "b":
+    #                 if self.backObstacleAverage <1:
+    #                     return False
+    #     msg.axes[1] = 0.0  # Stop movement after duration
+    #     msg.axes[3] = 0.0
+    #     self.current_joy_message = msg
+    #     self.publish_current_command()
 
     def move_backward_for_duration(self, duration):
         msg = self.current_joy_message
@@ -575,8 +651,6 @@ class AutoMove:
         self.publish_current_command()
         msg.buttons[5] = 0
         self.publish_current_command()
-
-
 
     def publish_current_command(self):
         self.current_joy_message.header.stamp = rospy.Time.now()
@@ -600,40 +674,53 @@ def main():
 
     try:
         auto_mover.timeSleep(15)
+        # while auto_mover.yaw_z == 0.0:
+        #     print("waiting")
+        #     auto_mover.timeSleep(1)
+
 
         
         while not rospy.is_shutdown(): 
             if auto_mover.currentTrot == 0 and auto_mover.disabled == False:
                 auto_mover.enable()
+                auto_mover.timeSleep(1)
                 # pass
             if auto_mover.disabled == False and auto_mover.currentTrot != 0:
+                auto_mover.move_forward_for_duration(10)
+                # auto_mover.move_straight_for_distance(0.5)
+                while auto_mover.currentTrot != 0: 
+                    auto_mover.enable()
+                    auto_mover.disabled = True
+                    auto_mover.timeSleep(0.5)
+                    
+                # auto_mover.timeSleep(20)
 
-                if auto_mover.obstacleAverage <0.5:
-                    auto_mover.timeSleep(1)
-                    print("Moving Backward")
-                    if auto_mover.backObstacleAverage > 1:
-                        auto_mover.move_backward_for_duration(2)
-                    turnAmount = random.randint(1, 4)
-                    turnDirection = random.random()-0.5
-                    print("turn amount")
-                    print(turnAmount)
-                    print("turnDirection")
-                    print(turnDirection)
-                    if turnDirection < 0:
-                        auto_mover.move_left_for_duration(turnAmount)
-                    else:
-                        auto_mover.move_right_for_duration(turnAmount)
-                    auto_mover.timeSleep(1)
+                # if auto_mover.obstacleAverage <0.5:
+                #     auto_mover.timeSleep(1)
+                #     print("Moving Backward")
+                #     if auto_mover.backObstacleAverage > 1:
+                #         auto_mover.move_backward_for_duration(2)
+                #     turnAmount = random.randint(1, 4)
+                #     turnDirection = random.random()-0.5
+                #     print("turn amount")
+                #     print(turnAmount)
+                #     print("turnDirection")
+                #     print(turnDirection)
+                #     if turnDirection < 0:
+                #         auto_mover.move_left_for_duration(turnAmount)
+                #     else:
+                #         auto_mover.move_right_for_duration(turnAmount)
+                #     auto_mover.timeSleep(1)
 
 
-                else:
-                    print("Moving Forward")
-                    auto_mover.move_forward_for_duration(2)
-                    #auto_mover.move_straight_for_distance(10)
-                    # auto_mover.move_for_angle(90, "CCW")
-                    # auto_mover.timeSleep(0.5)
+                # else:
+                #     print("Moving Forward")
+                #     # auto_mover.move_forward_for_duration(2)
+                #     # auto_mover.move_straight_for_distance(5)
+                #     # auto_mover.move_for_angle(90, "CCW")
+                #     # auto_mover.timeSleep(0.5)
 
-                # auto_mover.timeSleep(1)
+                # # auto_mover.timeSleep(1)
                 rate.sleep()
                 
     except rospy.ROSInterruptException:
@@ -646,14 +733,14 @@ def main():
 if __name__ == "__main__":
     main()
 
-def main():
-    rospy.init_node("auto_input_listener")
-    rate = rospy.Rate(30)
-    rightOrLeft = True
-    if os.getenv("DISPLY", default="-") != "-":
-        rospy.logfatal("This device does not have a display connected. The keyboard node requires a connected display due to a limitation of the underlying package. Keyboard node now shutting down")
-        rospy.sleep(1)
-        sys.exit(0)
+# def main():
+#     rospy.init_node("auto_input_listener")
+#     rate = rospy.Rate(30)
+#     rightOrLeft = True
+#     if os.getenv("DISPLY", default="-") != "-":
+#         rospy.logfatal("This device does not have a display connected. The keyboard node requires a connected display due to a limitation of the underlying package. Keyboard node now shutting down")
+#         rospy.sleep(1)
+#         sys.exit(0)
 
-    signal.signal(signal.SIGINT, signal_handler)
-    auto_mover = AutoMove()
+#     signal.signal(signal.SIGINT, signal_handler)
+#     auto_mover = AutoMove()

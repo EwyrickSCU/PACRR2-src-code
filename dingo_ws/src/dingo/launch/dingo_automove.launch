@@ -1,0 +1,3 @@
+<launch>
+    <node pkg = "dingo_input_interfacing" type = "NickAutoMove.py" name = "auto_input_listener" output="screen"></node>
+</launch>

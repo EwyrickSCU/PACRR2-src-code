@@ -7,6 +7,9 @@
     <arg name="use_imu" default="0"/>
     <arg name="use_auto" default="0"/>
 
+    <env name="ROS_MASTER_URI" value="http://172.31.214.160:11311"/>
+    <env name="ROS_IP" value="172.31.214.160"/>
+
     <group if="$(arg is_physical)">
         <!-- Communication Node between Arduino and Pi -->
         <!-- <node pkg="rosserial_python" type="serial_node.py" name="dingo_rosserial" args="$(arg serial_port)" output="screen"/> -->
@@ -31,8 +34,8 @@
     </group>
 
     <group if="$(arg use_auto)">
-        <node pkg = "dingo_input_interfacing" type = "AutoMove.py" name = "auto_input_listener" output="screen"></node>
-        <!-- <include file="$(find wit_ros_imu)/launch/imu.launch"/> -->
+        <include file="$(find hector_slam_launch)/launch/tutorial.launch"/>
+        <!-- <node pkg = "dingo_input_interfacing" type = "NickAutoMove.py" name = "auto_input_listener" output="screen"></node> -->
         <!-- <include file="$(find rplidar_ros)/launch/rplidar_a1.launch"/> -->
     </group>
     

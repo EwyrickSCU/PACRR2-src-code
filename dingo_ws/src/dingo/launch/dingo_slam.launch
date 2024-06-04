@@ -1,0 +1,7 @@
+<launch>
+    <env name="ROS_MASTER_URI" value="http://172.31.214.160:11311"/>
+    <env name="ROS_IP" value="172.31.214.160"/>
+
+    <include file="$(find rplidar_ros)/launch/rplidar_a1.launch"/>
+    <include file="$(find hector_slam_launch)/launch/tutorial.launch"/>
+</launch>

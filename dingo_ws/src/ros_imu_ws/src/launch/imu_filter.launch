@@ -2,13 +2,14 @@
   <!-- Start imu_filter_madgwick node -->
   <node name="imu_filter" pkg="imu_filter_madgwick" type="imu_filter_node" output="screen">
     <!-- Set input IMU topic -->
-    <param name="imu_topic" value="/wit/imu"/>
+    <!-- <param name="imu_topic" value="/wit/imu"/> -->
     <!-- Set output filtered IMU topic -->
-    <param name="imu_topic_filtered" value="/imu_filtered"/>
+    <!-- <param name="imu_topic_filtered" value="/imu_filtered"/> -->
     <!-- Set filter parameters -->
     <param name="imu_rate" value="100"/>
     <param name="beta" value="0.1"/>
-    <param name="use_mag" value="false"/>
+    <param name="use_mag" value="true"/>
+    <param name="publish_tf" value="false"/>
     <remap from="/imu/data_raw" to="/wit/imu"/>
     <remap from="/imu/mag" to="/wit/mag"/>
   </node>

@@ -58,8 +58,8 @@ class HardwareInterface():
                     #  [[65, 109, 119, 79],
                     #  [ 13,   3,  5, 24],
                     #  [ 0,   0,  0,  0]])
-                    [[65, 109, 119, 79],
-                     [ 13,   3,  5, 14],
+                    [[65, 109, 115, 79],
+                     [ 8,   3,  8, 19],
                      [ 0,   0,  0,  0]])
         #applying calibration values to all servos
         self.create()
