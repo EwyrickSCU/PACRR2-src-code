@@ -1,7 +1,9 @@
+#This code contains the commands necessary to initialize the robot image.
 FROM osrf/ros:noetic-desktop-full
 
 RUN sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 
+#These seem to be essential libraries 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     gdb \
@@ -23,6 +25,7 @@ RUN apt-get update && \
     ros-noetic-rosserial-arduino \
     git 
 
+#External Libraries
 RUN pip3 install \
     #Following are from pupper code
     transforms3d \
