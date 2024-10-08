@@ -1,1 +1,1 @@
-asvav
+Dingo_ws contains the heft of the code, devcontainer is a json object listing dog and docker properties, Docker_compose and Docker initialize the robot image, and the other files set the entrypoint, initialize repos, and determine cmakes. Dingo_ws is primarily python code, but contains .launch files as well for robot startup.
